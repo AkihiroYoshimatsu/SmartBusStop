@@ -1,4 +1,4 @@
-//くるりんばす時刻表URLからORコードを作成
+//災害用伝言板（web171）URLからORコードを作成
 function createQR() {
     jQuery(function(){
         jQuery('#qrcode').qrcode({
