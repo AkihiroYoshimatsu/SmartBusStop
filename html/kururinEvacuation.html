@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <title>地域避難所情報</title>
+        <link rel="stylesheet" href="../css/stylesheet_evacuation.css">
+    </head>
+    
+    <body>
+        <div class="header_evacuation">
+        <center>
+            <div class="header_logo">地域避難所の案内</div>
+        </div>
+        <div class="heading"><b><u>地域避難所のお知らせ</u></b></div>
+        <div class="shelter">
+            <p>日進中学校</p>
+            <p>赤池公民館</p>
+            <p>日生梅森園集会所</p>
+            <p>コミュニティ－岩崎台</p>
+        </div>  
+        <div class="footer">
+            <div class="footer-logo_1">災害用伝言ダイヤル</div>
+            <div class="evacuation">
+                <p>電話で利用する場合は<b>171</b>へ</p>
+                <p>災害用伝言板（<b>web171</b>）はこちら→</p>
+            </div>
+            <div class="qrcode" align="right">
+                <p>災害用伝言板↓</p>
+            <div id="qrcode"></div>
+            </div>
+        </div>
+        
+        <!--QRコード作成・表示-->
+        <script src="../script/jquery.min.js"></script>
+        <script type="text/javascript" src="../script/jquery.qrcode.min.js"></script>
+        <script type="text/javascript" src="../script/createQR_evacuation.js"></script>
+        <script>
+            createQR();
+        </script>
+    </body>
+</html>
