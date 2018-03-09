@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>time_table</title>
+		<link rel="stylesheet" href="../css/stylesheet_timeTable.css">
+ 	</head>
+
+ 	<body>
+		<div class="header">
+		<center>
+            <div class="header-logo">くるりんばす発車案内</div>
+            <div class="header-busStop">図書館</div>
+            <div class="header-time">現在時刻 <b id="nowTime"></b><b id="nowWeek"></b></div>
+		</div>
+        <table border="1" width=100%>
+            <tr align="center">
+            <th height="50" style="border-right-style: hidden;">路線</th>
+            <th style="border-right-style: hidden;">発車時刻</th>
+            <th style="border-right-style: hidden;">次駅</th>
+            <th>運行状況</th>
+            </tr>
+            <tr align="center">
+            <td id="routeName0" height="180"></td>
+            <td id="time0" style="border-right-style: hidden;"></td>
+            <td id="next0" style="border-right-style: hidden;"></td>
+            <td>あと<b id="opeTime0"></b>分</td>
+            </tr>
+            <tr align="center">
+            <td id="routeName1" height="180"></td>
+            <td id="time1" style="border-right-style: hidden;"></td>
+            <td id="next1" style="border-right-style: hidden;"></td>
+            <td>あと<b id="opeTime1"></b>分</td>
+            </tr>
+            <tr align="center">
+            <td id="routeName2" height="180"></td>
+            <td id="time2" style="border-right-style: hidden;"></td>
+            <td id="next2" style="border-right-style: hidden;"></td>
+            <td>あと<b id="opeTime2"></b>分</td>
+            </tr>
+        </table>
+            
+        <div class="footer">
+            <div class="footer-logo">地域情報 新着・イベント情報</div>
+            <div class="community">
+                <p>日進スポーツセンター休館日</p>
+                <p>台風接近中 愛知県</p>
+            </div>
+            <div class="qrcode" align="right">
+                <p>くるりんばす時刻表↓</p>
+                <div id="qrcode"></div>
+            </div>
+        </div>
+            
+        <!--QRコード作成・表示-->
+        <script src="../script/jquery.min.js"></script>
+        <script type="text/javascript" src="../script/jquery.qrcode.min.js"></script>
+        <script type="text/javascript" src="../script/createQR.js"></script>
+        <script>
+            createQR();
+        </script>
+            
+        <!--バスの各種情報の読み込み・表示-->
+        <script>
+            //バス情報data.jsonを読み込む
+            var path = "data.json";
+
+            loadFile();
+
+            //非同期通信処理
+            function loadFile() {
+                var req = new XMLHttpRequest();     //XMLHttpRequestオブジェクトを生成
+                req.open("GET", path, true);        //webサーバに送るコマンドを指定
+                req.responseType = "json";          //取得するデータ形式をjson形式に
+                req.addEventListener("load", function (ev) {
+                    if (ev.target.status == 200) {
+                        showData(ev.target.response);
+                    } else {
+                        console.log("読み込めませんでした");
+                    }
+                });
+                req.send(null);
+            }
+
+            // JSONデータを表示する
+            function showData(response) {
+                //読み込んだバス情報を格納
+                var opeData = response.opeData;
+                //日時情報を取得
+                function set2fig(num) {
+                    // 桁数が1桁だったら先頭に0を加えて2桁に調整する
+                    var ret;
+                    if(num < 10) {
+                        ret = "0" + num;
+                    } else { 
+                        ret = num; 
+                    }
+                    return ret;
+                }
+        
+                //現在日時の取得
+                var nowTime = new Date();
+                //時間の取得
+                var nowHour = set2fig(nowTime.getHours());
+                //分の取得
+                var nowMin  = set2fig(nowTime.getMinutes());
+                //○○：○○ 形式へ
+                var clock = nowHour + ":" + nowMin;
+                //現在時刻の表示
+                document.getElementById("nowTime").innerHTML = clock;
+                //曜日の取得
+                var week = nowTime.getDay();
+                
+                //平日/休日ダイヤ判別
+                var date;
+                if(week == 0 || week == 6) {    //0：日，6：土
+                    date = 1;                   //1を代入して休日ダイヤ
+                } else {                        //1：月，2：火，3：水，4：木，5：金
+                    date = 0;                   //0を代入して平日ダイヤ
+                }
+                
+                //JSONデータ全体を時刻の早い順にソート
+                opeData.sort(function(a, b) {
+                    if(a.time>b.time) return 1;
+                    if(a.time<b.time) return -1;
+                    return 0;
+                });
+
+                //現在時刻以降のデータを抽出
+                var matchData = opeData.filter(function(item, index) {
+                    if(item.opeTime >= new String(clock) && item.day == date) return true;
+                });
+
+                //発車時刻が同じ場合，運行状況が早い方を先に表示させる
+                for(var i = 0; i < 3; i++) {
+                    for(var j = 0; j < 3; j++) {
+                        if(matchData[i].time == matchData[j].time &&
+                           matchData[i].opeTime < matchData[j].opeTime) {
+                            var tmp = matchData[j];
+                            matchData[j] = matchData[i];
+                            matchData[i] = tmp;
+                        }
+                    }
+                }
+                
+                //バスの各種情報を表示
+                for (var i = 0; i < 3; i++) {
+                    //遅延時間を考慮した発車予定時刻を時間と分に分割
+                    var departure = matchData[i].opeTime.split(":");
+                    //発車時刻を時間と分に分割
+                    var willTime = matchData[i].time.split(":");
+                    
+                    var differenceHour = [];
+                    var differenceMin = [];
+
+                    //現在時刻と発車時刻の差の算出
+                    differenceHour[i] = departure[0] - nowHour;
+                    differenceMin[i] = departure[1] - nowMin;
+
+                    //定刻運行か遅延運行かどうか判別
+                    var service;
+                    if((nowHour <= willTime[0] - differenceHour[i]) && (nowMin <= willTime[1] - differenceMin[i])) {
+                        service = "<div class='ontime'><b>定刻</b></div>";
+                    } else if((nowHour >= willTime[0] - differenceHour[i]) && (nowMin >= willTime[1] - differenceMin[i])) {
+                        service = "<div class='offtime'><b>遅延</b></div>";
+                    } else {
+                        service = "";
+                    }
+
+                    //1時間差があった場合，60分増やす
+                    if(differenceHour[i] == 1) differenceMin[i] += 60;
+                    //2時間差があった場合，120分増やす
+                    if(differenceHour[i] == 2) differenceMin[i] += 120;
+
+                    //路線便番号を表示
+                    var matchRoute = document.getElementById("routeName"+i);
+                    matchRoute.innerHTML = matchData[i].routeName + "線<div>" + matchData[i].num + "便</div>";
+                    //発車時刻を表示
+                    var matchTime = document.getElementById("time"+i);
+                    matchTime.innerHTML = matchData[i].time + service;
+                    //次の停車駅を表示
+                    var matchNext = document.getElementById("next"+i);
+                    matchNext.innerHTML = matchData[i].next;
+                    //バスの運行状況を表示
+                    var matchOpeTime = document.getElementById("opeTime"+i);
+                    matchOpeTime.style.fontSize = "80px";
+                    matchOpeTime.innerHTML = differenceMin[i];
+                }    
+            }
+            //1分間隔で更新
+            setInterval('loadFile()',10000);
+        </script>
+ 	</body>
+ </html>
