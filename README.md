@@ -1,1 +1,2 @@
 # SmartBusStop
+スマートバス停
